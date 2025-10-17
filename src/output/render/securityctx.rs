@@ -5,6 +5,8 @@
 // SPDX-FileCopyrightText: 2014 Benjamin Sago
 // SPDX-License-Identifier: MIT
 use nu_ansi_term::Style;
+#[cfg(windows)]
+use unicode_width::UnicodeWidthStr;
 
 use crate::fs::fields as f;
 use crate::output::cell::{DisplayWidth, TextCell};
@@ -32,6 +34,26 @@ impl f::SecurityContext<'_> {
                 TextCell {
                     contents: chars.into(),
                     width: DisplayWidth::from(context.len()),
+                }
+            }
+            #[cfg(windows)]
+            f::SecurityContextType::Windows(info) => {
+                let mut contents = Vec::with_capacity(3);
+                let mut width = UnicodeWidthStr::width(info.owner.as_str());
+                contents.push(colours.selinux_user().paint(info.owner.clone()));
+
+                if let Some(group) = &info.group {
+                    let separator = " / ";
+                    width += UnicodeWidthStr::width(separator);
+                    contents.push(colours.selinux_colon().paint(separator.to_string()));
+
+                    width += UnicodeWidthStr::width(group.as_str());
+                    contents.push(colours.selinux_role().paint(group.clone()));
+                }
+
+                TextCell {
+                    contents: contents.into(),
+                    width: DisplayWidth::from(width),
                 }
             }
         }

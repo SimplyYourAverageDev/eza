@@ -239,6 +239,8 @@ impl<'a> Render<'a> {
         let selinux_ctx_shown = self.opts.secattr
             && match file.security_context().context {
                 SecurityContextType::SELinux(_) => true,
+                #[cfg(windows)]
+                SecurityContextType::Windows(_) => true,
                 SecurityContextType::None => false,
             };
         xattr_count > 1 || (xattr_count == 1 && !selinux_ctx_shown)
