@@ -34,6 +34,8 @@ use crate::fs::feature::xattr::{Attribute, FileAttributes};
 use crate::fs::fields as f;
 use crate::fs::fields::SecurityContextType;
 use crate::fs::recursive_size::RecursiveSize;
+#[cfg(windows)]
+use crate::fs::windows;
 
 use super::mounts::all_mounts;
 use super::mounts::MountedFs;
@@ -952,9 +954,11 @@ impl<'dir> File<'dir> {
 
     #[cfg(windows)]
     pub fn security_context(&self) -> f::SecurityContext<'_> {
-        f::SecurityContext {
-            context: SecurityContextType::None,
-        }
+        let context = windows::query_security_context(&self.path)
+            .map(SecurityContextType::Windows)
+            .unwrap_or(SecurityContextType::None);
+
+        f::SecurityContext { context }
     }
 
     /// User file flags.

@@ -18,6 +18,11 @@ use crate::output::table::{
 use crate::output::time::TimeFormat;
 use crate::output::{details, grid, Mode, TerminalWidth, View};
 
+#[cfg(windows)]
+const SECURITY_CONTEXT_AVAILABLE: bool = true;
+#[cfg(not(windows))]
+const SECURITY_CONTEXT_AVAILABLE: bool = xattr::ENABLED;
+
 impl View {
     pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
         let width = TerminalWidth::deduce(matches, vars)?;
@@ -164,7 +169,7 @@ impl details::Options {
             table: None,
             header: false,
             xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
-            secattr: xattr::ENABLED && matches.has(&flags::SECURITY_CONTEXT)?,
+            secattr: SECURITY_CONTEXT_AVAILABLE && matches.has(&flags::SECURITY_CONTEXT)?,
             mounts: matches.has(&flags::MOUNTS)?,
             color_scale: ColorScaleOptions::deduce(matches, vars)?,
             follow_links: matches.has(&flags::FOLLOW_LINKS)?,
@@ -186,7 +191,7 @@ impl details::Options {
             table: Some(TableOptions::deduce(matches, vars)?),
             header: matches.has(&flags::HEADER)?,
             xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
-            secattr: xattr::ENABLED && matches.has(&flags::SECURITY_CONTEXT)?,
+            secattr: SECURITY_CONTEXT_AVAILABLE && matches.has(&flags::SECURITY_CONTEXT)?,
             mounts: matches.has(&flags::MOUNTS)?,
             color_scale: ColorScaleOptions::deduce(matches, vars)?,
             follow_links: matches.has(&flags::FOLLOW_LINKS)?,
@@ -287,7 +292,8 @@ impl Columns {
         let inode = matches.has(&flags::INODE)?;
         let links = matches.has(&flags::LINKS)?;
         let octal = matches.has(&flags::OCTAL)?;
-        let security_context = xattr::ENABLED && matches.has(&flags::SECURITY_CONTEXT)?;
+        let security_context =
+            SECURITY_CONTEXT_AVAILABLE && matches.has(&flags::SECURITY_CONTEXT)?;
         let file_flags = matches.has(&flags::FILE_FLAGS)?;
 
         let permissions = !matches.has(&flags::NO_PERMISSIONS)?;

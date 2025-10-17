@@ -263,8 +263,17 @@ impl Default for Git {
     }
 }
 
+#[cfg(windows)]
+#[derive(Clone, Debug)]
+pub struct WindowsSecurityContext {
+    pub owner: String,
+    pub group: Option<String>,
+}
+
 pub enum SecurityContextType<'a> {
     SELinux(&'a str),
+    #[cfg(windows)]
+    Windows(WindowsSecurityContext),
     None,
 }
 
